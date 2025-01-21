@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Calendar, Clock, CalendarDays } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import AcademicCalendar from '@/app/calender/page';
-import { EventsToday } from '@/app/calender/page';
+import { EventsToday } from '@/components/EventsToday';
 import { initialEvents } from '@/constants/events';
 
 // Define interfaces at the top level
