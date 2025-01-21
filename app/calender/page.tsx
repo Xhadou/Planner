@@ -1,13 +1,28 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Calendar as CalendarIcon, Plus, X, Clock } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 
-const eventTypes = {
+interface EventType {
+  label: string;
+  color: string;
+  legendColor: string;
+}
+
+interface Event {
+  id: number;
+  name: string;
+  date?: string;
+  startDate?: string;
+  endDate?: string;
+  type: string;
+}
+
+const eventTypes: Record<string, EventType> = {
   white: { 
     label: 'Academic Event', 
     color: 'bg-white border-gray-200 text-gray-800',
@@ -35,7 +50,7 @@ const eventTypes = {
   }
 };
 
-const initialEvents = [
+const initialEvents: Event[] = [
   { id: 1, name: 'Republic Day', date: '2025-01-26', type: 'red' },
   { id: 2, name: 'Last Date to add full semester UG courses', date: '2025-01-27', type: 'white' },
   { id: 3, name: 'Last Date to Drop half semester UG courses', date: '2025-01-27', type: 'white' },
@@ -56,20 +71,26 @@ const initialEvents = [
   { id: 18, name: 'Eid', date: '2025-03-31', type: 'red' }
 ];
 
-const EventCard = ({ event }) => (
+const EventCard: React.FC<{ event: Event }> = ({ event }) => (
   <div className={`p-4 rounded-lg border transition-colors ${eventTypes[event.type].color}`}>
     <h3 className="font-semibold">{event.name}</h3>
     <p className="text-sm mt-1">
       {event.date 
         ? new Date(event.date).toLocaleDateString()
-        : `${new Date(event.startDate).toLocaleDateString()} - ${new Date(event.endDate).toLocaleDateString()}`
+        : `${new Date(event.startDate!).toLocaleDateString()} - ${new Date(event.endDate!).toLocaleDateString()}`
       }
     </p>
     <p className="text-xs mt-1 opacity-75">{eventTypes[event.type].label}</p>
   </div>
 );
 
-const AddEventModal = ({ isOpen, onClose, onAdd }) => {
+interface AddEventModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onAdd: (event: Event) => void;
+}
+
+const AddEventModal: React.FC<AddEventModalProps> = ({ isOpen, onClose, onAdd }) => {
   const [isDuration, setIsDuration] = useState(false);
   const [eventName, setEventName] = useState('');
   const [date, setDate] = useState('');
@@ -78,7 +99,7 @@ const AddEventModal = ({ isOpen, onClose, onAdd }) => {
   const [eventType, setEventType] = useState('white');
   const [isClosing, setIsClosing] = useState(false);
   const [isOpening, setIsOpening] = useState(false);
-  const modalRef = useRef(null);
+  const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -88,7 +109,7 @@ const AddEventModal = ({ isOpen, onClose, onAdd }) => {
     }
   }, [isOpen]);
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     setIsClosing(true);
     setTimeout(() => {
       setIsClosing(false);
@@ -101,13 +122,13 @@ const AddEventModal = ({ isOpen, onClose, onAdd }) => {
       setEventType('white');
       setIsDuration(false);
     }, 300);
-  };
+  }, [onClose]);
 
-  const handleClickOutside = (event) => {
-    if (modalRef.current && !modalRef.current.contains(event.target)) {
+  const handleClickOutside = useCallback((event: MouseEvent) => {
+    if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
       handleClose();
     }
-  };
+  }, [handleClose]);
 
   useEffect(() => {
     if (isOpen) {
@@ -118,11 +139,11 @@ const AddEventModal = ({ isOpen, onClose, onAdd }) => {
       document.removeEventListener('mousedown', handleClickOutside);
       document.body.style.overflow = 'unset';
     };
-  }, [isOpen]);
+  }, [isOpen, handleClickOutside]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const newEvent = {
+    const newEvent: Event = {
       id: Date.now(),
       name: eventName,
       type: eventType,
@@ -165,7 +186,7 @@ const AddEventModal = ({ isOpen, onClose, onAdd }) => {
             <Input
               value={eventName}
               onChange={(e) => setEventName(e.target.value)}
-              className="w-full text-black"
+              className="w-full"
               required
             />
           </div>
@@ -193,7 +214,6 @@ const AddEventModal = ({ isOpen, onClose, onAdd }) => {
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="text-black"
                   required
                 />
               </div>
@@ -205,7 +225,6 @@ const AddEventModal = ({ isOpen, onClose, onAdd }) => {
                   type="date"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                  className="text-black"
                   required
                 />
               </div>
@@ -219,7 +238,6 @@ const AddEventModal = ({ isOpen, onClose, onAdd }) => {
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="text-black"
                 required
               />
             </div>
@@ -232,7 +250,7 @@ const AddEventModal = ({ isOpen, onClose, onAdd }) => {
             <Select
               value={eventType}
               onChange={(e) => setEventType(e.target.value)}
-              className="w-full text-black"
+              className="w-full"
             >
               {Object.entries(eventTypes).map(([key, { label }]) => (
                 <option key={key} value={key}>{label}</option>
@@ -249,13 +267,18 @@ const AddEventModal = ({ isOpen, onClose, onAdd }) => {
   );
 };
 
-const EventsToday = ({ events, currentDate }) => {
+interface EventsTodayProps {
+  events: Event[];
+  currentDate: Date;
+}
+
+const EventsToday: React.FC<EventsTodayProps> = ({ events, currentDate }) => {
   const todayEvents = events.filter(event => {
     if (event.date) {
       return new Date(event.date).toDateString() === currentDate.toDateString();
     }
-    const startDate = new Date(event.startDate);
-    const endDate = new Date(event.endDate);
+    const startDate = new Date(event.startDate!);
+    const endDate = new Date(event.endDate!);
     return currentDate >= startDate && currentDate <= endDate;
   });
 
@@ -276,7 +299,7 @@ const EventsToday = ({ events, currentDate }) => {
   );
 };
 
-const Legend = () => (
+const Legend: React.FC = () => (
   <div className="mt-6 p-4 bg-gray-50/80 rounded-lg border border-gray-100">
     <h3 className="font-semibold mb-3 text-gray-900">Legend</h3>
     <div className="grid grid-cols-2 gap-3">
@@ -290,8 +313,8 @@ const Legend = () => (
   </div>
 );
 
-const AcademicCalendar = () => {
-  const [events, setEvents] = useState(initialEvents);
+const AcademicCalendar: React.FC = () => {
+  const [events, setEvents] = useState<Event[]>(initialEvents);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [currentDate] = useState(new Date());
   const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth());
@@ -299,7 +322,7 @@ const AcademicCalendar = () => {
 
   const months = ['January', 'February', 'March', 'April', 'May'];
 
-  const getMonthEvents = () => {
+  const getMonthEvents = useCallback(() => {
     return events.filter(event => {
       if (event.date) {
         const eventDate = new Date(event.date);
@@ -307,8 +330,8 @@ const AcademicCalendar = () => {
                eventDate.getFullYear() === selectedYear &&
                eventDate >= currentDate;
       } else {
-        const startDate = new Date(event.startDate);
-        const endDate = new Date(event.endDate);
+        const startDate = new Date(event.startDate!);
+        const endDate = new Date(event.endDate!);
         
         // Check if the event spans the selected month
         const monthStart = new Date(selectedYear, selectedMonth, 1);
@@ -322,7 +345,7 @@ const AcademicCalendar = () => {
         );
       }
     });
-  };
+  }, [events, selectedMonth, selectedYear, currentDate]);
 
   return (
     <div className="min-h-screen bg-gray-50 w-full">
