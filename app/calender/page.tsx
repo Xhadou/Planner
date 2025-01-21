@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Calendar as CalendarIcon, Plus, X, Clock } from 'lucide-react';
+import { Calendar as CalendarIcon, Plus, X } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
+import { EventsToday, EventCard } from '@/components/EventsToday';
 
 interface EventType {
   label: string;
@@ -70,19 +71,6 @@ const initialEvents: Event[] = [
   { id: 17, name: 'Result Declaration Day', date: '2025-05-17', type: 'white' },
   { id: 18, name: 'Eid', date: '2025-03-31', type: 'red' }
 ];
-
-const EventCard: React.FC<{ event: Event }> = ({ event }) => (
-  <div className={`p-4 rounded-lg border transition-colors ${eventTypes[event.type].color}`}>
-    <h3 className="font-semibold">{event.name}</h3>
-    <p className="text-sm mt-1">
-      {event.date 
-        ? new Date(event.date).toLocaleDateString()
-        : `${new Date(event.startDate!).toLocaleDateString()} - ${new Date(event.endDate!).toLocaleDateString()}`
-      }
-    </p>
-    <p className="text-xs mt-1 opacity-75">{eventTypes[event.type].label}</p>
-  </div>
-);
 
 interface AddEventModalProps {
   isOpen: boolean;
@@ -267,38 +255,6 @@ const AddEventModal: React.FC<AddEventModalProps> = ({ isOpen, onClose, onAdd })
   );
 };
 
-interface EventsTodayProps {
-  events: Event[];
-  currentDate: Date;
-}
-
-const EventsToday: React.FC<EventsTodayProps> = ({ events, currentDate }) => {
-  const todayEvents = events.filter(event => {
-    if (event.date) {
-      return new Date(event.date).toDateString() === currentDate.toDateString();
-    }
-    const startDate = new Date(event.startDate!);
-    const endDate = new Date(event.endDate!);
-    return currentDate >= startDate && currentDate <= endDate;
-  });
-
-  if (todayEvents.length === 0) return null;
-
-  return (
-    <div className="mb-6 p-4 bg-gray-50/80 rounded-lg border border-gray-100">
-      <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-        <Clock className="w-5 h-5" />
-        Events Today
-      </h2>
-      <div className="space-y-3">
-        {todayEvents.map(event => (
-          <EventCard key={event.id} event={event} />
-        ))}
-      </div>
-    </div>
-  );
-};
-
 const Legend: React.FC = () => (
   <div className="mt-6 p-4 bg-gray-50/80 rounded-lg border border-gray-100">
     <h3 className="font-semibold mb-3 text-gray-900">Legend</h3>
@@ -401,6 +357,5 @@ const AcademicCalendar: React.FC = () => {
     </div>
   );
 };
-
-export { EventsToday };
+  
 export default AcademicCalendar;
