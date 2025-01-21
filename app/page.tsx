@@ -5,10 +5,30 @@ import { Calendar, Clock, CalendarDays } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import AcademicCalendar from '@/app/calender/page';
 import { EventsToday } from '@/app/calender/page';
-import { initialEvents, eventTypes } from '@/constants/events';
+import { initialEvents } from '@/constants/events';
 
+// Define interfaces at the top level
+interface ClassData {
+  course: string;
+  code: string;
+  type: string;
+  time: string;
+  location: string;
+  color: string;
+}
 
-const scheduleData = {
+interface ScheduleData {
+  [key: string]: ClassData[];
+}
+
+interface ClassCardProps {
+  class_: ClassData;
+  currentTime: Date;
+  isOngoing: boolean;
+  showTimeStatus?: boolean;
+}
+
+const scheduleData: ScheduleData = {
   Monday: [
     { 
       course: "Cloud Computing",
@@ -157,16 +177,16 @@ const scheduleData = {
   ]
 };
 
-const parseTime = (timeStr) => {
+const parseTime = (timeStr: string): number => {
   const [time, modifier] = timeStr.split(/(?=[AP]M)/);
   let [hours, minutes] = time.split(':');
-  hours = parseInt(hours);
-  if (modifier === 'PM' && hours < 12) hours += 12;
-  if (modifier === 'AM' && hours === 12) hours = 0;
-  return hours * 60 + parseInt(minutes);
+  let hoursNum = parseInt(hours);
+  if (modifier === 'PM' && hoursNum < 12) hoursNum += 12;
+  if (modifier === 'AM' && hoursNum === 12) hoursNum = 0;
+  return hoursNum * 60 + parseInt(minutes);
 };
 
-const formatTime = (date) => {
+const formatTime = (date: Date): string => {
   return date.toLocaleTimeString('en-US', { 
     hour: 'numeric', 
     minute: '2-digit', 
@@ -174,7 +194,7 @@ const formatTime = (date) => {
   });
 };
 
-const getTimeStatus = (class_, currentMinutes) => {
+const getTimeStatus = (class_: ClassData, currentMinutes: number): string => {
   const [startTime, endTime] = class_.time.split('-');
   const startMinutes = parseTime(startTime);
   const endMinutes = parseTime(endTime);
@@ -193,7 +213,12 @@ const getTimeStatus = (class_, currentMinutes) => {
   return '';
 };
 
-const ClassCard = ({ class_, currentTime, isOngoing, showTimeStatus = false }) => {
+const ClassCard: React.FC<ClassCardProps> = ({ 
+  class_, 
+  currentTime, 
+  isOngoing, 
+  showTimeStatus = false 
+}) => {
   const currentMinutes = currentTime.getHours() * 60 + currentTime.getMinutes();
   const timeStatus = showTimeStatus ? getTimeStatus(class_, currentMinutes) : '';
 
@@ -227,7 +252,7 @@ const ClassCard = ({ class_, currentTime, isOngoing, showTimeStatus = false }) =
   );
 };
 
-const DailySchedule = () => {
+const DailySchedule: React.FC = () => {
   const getCurrentDay = () => {
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const currentDay = days[new Date().getDay()];
@@ -253,7 +278,7 @@ const DailySchedule = () => {
 
     const currentMinutes = currentTime.getHours() * 60 + currentTime.getMinutes();
     
-    const classified = scheduleData[today].reduce((acc, class_) => {
+    const classified = scheduleData[today].reduce((acc: { ongoing: ClassData[]; upcoming: ClassData[] }, class_) => {
       const [startTime, endTime] = class_.time.split('-');
       const startMinutes = parseTime(startTime);
       const endMinutes = parseTime(endTime);
@@ -276,7 +301,6 @@ const DailySchedule = () => {
     <div className="min-h-screen bg-gray-50 w-full">
       <div className="w-full max-w-4xl mx-auto p-3 md:p-6">
         <div className="bg-white rounded-lg shadow-lg p-4 md:p-6">
-          {/* Calendar Toggle Button */}
           <div className="mb-4 flex justify-end">
             <Button
               onClick={() => setShowCalendar(!showCalendar)}
@@ -291,7 +315,6 @@ const DailySchedule = () => {
             <AcademicCalendar />
           ) : (
             <>
-              {/* Today Section */}
               <div className="mb-6 md:mb-8 p-3 md:p-4 bg-gray-50 rounded-lg">
                 <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-4 flex flex-wrap items-center gap-2">
                   <Clock className="w-5 h-5 md:w-6 md:h-6 flex-shrink-0" />
@@ -303,13 +326,11 @@ const DailySchedule = () => {
                   </span>
                 </h2>
   
-                {/* Events Today Section */}
                 <EventsToday 
                   events={initialEvents} 
                   currentDate={currentTime} 
                 />
                 
-                {/* Ongoing Classes */}
                 <div className="mb-4 md:mb-6">
                   <h3 className="text-base md:text-lg font-semibold text-gray-700 mb-3 flex items-center">
                     <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
@@ -332,7 +353,6 @@ const DailySchedule = () => {
                   </div>
                 </div>
   
-                {/* Upcoming Classes */}
                 <div>
                   <h3 className="text-base md:text-lg font-semibold text-gray-700 mb-3 flex items-center">
                     <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
@@ -356,7 +376,6 @@ const DailySchedule = () => {
                 </div>
               </div>
   
-              {/* Weekly Schedule Section */}
               <div className="mb-6 md:mb-8">
                 <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-4 flex flex-wrap items-center gap-2">
                   <Calendar className="w-6 h-6 md:w-8 md:h-8 flex-shrink-0" />
@@ -403,4 +422,5 @@ const DailySchedule = () => {
     </div>
   );
 };
+
 export default DailySchedule;
